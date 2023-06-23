@@ -3,16 +3,19 @@ import React from "react";
 import {Button,TextField,Stack,List,ListItem} from '@mui/material'
 import "./createAccount.css"
 import {useState,useEffect,useRef} from 'react'
-
+import { useNavigate } from "react-router-dom";
 function CreateAccount() {
   const [error,setError] = useState(false);
+  const [duplicate_user,setIsDuplicate]  =useState(false)
+  const [duplicate_user_text,setDuplicate] = useState("")
   const [error_cof,setErrorCof] = useState(false);
   const [helperText_cof,setCofHelperText] = useState("");
   const [helperText,setHelperText] = useState("");
  let [disabled,setDisabled] = useState([true,true,true,true,true,true])
  const [allGreen,setIsGreen] = useState([true,true,true,true,true])
-  
+  let navigate = useNavigate();
   const userInputted = (val,e) =>{
+      setIsDuplicate(false)
     const passwordCheck = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{8,})/
     const currentValue = e.target.value;
     const updatedDisabled = [...disabled];
@@ -57,7 +60,7 @@ function CreateAccount() {
         }
       }
     }
-setDisabled(updatedDisabled);
+  setDisabled(updatedDisabled);
     }
    
     
@@ -100,9 +103,11 @@ setDisabled(updatedDisabled);
      setDisabled([false,false,false,false,true])
     }else{
          var first = document.getElementById('first').value
-         
-      const user = {firstName:first};
-      fetch('http://localhost:5000/user/',{
+         var last = document.getElementById("last").value;
+            var email = document.getElementById("email").value;
+               var curr_password = document.getElementById("password").value;
+      const user = {firstName:first,lastName: last,email:email,password:curr_password};
+      fetch('http://localhost:8000/createUser/',{
         method:'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,6 +117,17 @@ setDisabled(updatedDisabled);
       .then(response =>response.json())
       .then(responseData =>{
           console.log("Response from server " ,responseData)
+          console.log(responseData.success)
+          if(!responseData.success){
+            setIsDuplicate(true);
+            setDisabled("A User Is Already Associated with this Email please try a different email")
+            document.getElementById('email').value = "";
+
+          }else{
+            setIsDuplicate(false);
+            navigate("/")
+            
+          }
       })
       .catch(error => {
         console.error("Error", error)
@@ -124,7 +140,7 @@ setDisabled(updatedDisabled);
         <Stack spacing={4}>
            <TextField id = "first" label = "First Name"  variant="outlined" onInput={(event) =>userInputted(0,event)}  />
            <TextField id = "last" label = "Last Name" onInput={(event) =>userInputted(1,event)}  />
-           <TextField id = "email" label = "Email" onInput={(event) =>userInputted(2,event)}/>
+           <TextField id = "email" label = "Email" onInput={(event) =>userInputted(2,event)} error = {duplicate_user} helperText = {duplicate_user_text}/>
            <TextField id = "password" label = "Password" type="password" error = {error} helperText = {helperText} onInput={(event) =>userInputted(3,event)} />
            <List sx={{ listStyleType: 'disc' }} id = "list-item">
             <ListItem id= "list-item1"    sx={{ padding: 0,textAlign: "center",listStyleType: "disc",display: "list-item",
