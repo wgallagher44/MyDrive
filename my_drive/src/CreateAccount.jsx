@@ -106,7 +106,7 @@ function CreateAccount() {
          var last = document.getElementById("last").value;
             var email = document.getElementById("email").value;
                var curr_password = document.getElementById("password").value;
-      const user = {firstName:first,lastName: last,email:email,password:curr_password};
+      const user = {firstName:first,lastName: last,email:email,password:curr_password,files:[]};
       fetch('http://localhost:8000/createUser/',{
         method:'POST',
         headers: {

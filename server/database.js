@@ -85,6 +85,33 @@ async function findUser(search_email,search_password){
     }
   return result;
 }
+async function getFiles(email){
+    
+    var user = await find(email);
+    if(user.length == 0){
+      return [];
+    }else{
+      console.log(user)
+      return user[0].files;
+    }
+    
+    
+}
+async function getDownloadFiles(idxs,email){
+    var result = [];
+    var arrayOfIdx = idxs.split(',')
+    var user = await find(email)
+    var files = user[0].files
+    arrayOfIdx.forEach(element => {
+      var idx = parseInt(element,10);
+
+     result.push(files[idx])
+    })
+   
+   return result;
+
+
+}
 
 async function updatePassword(email,newPassword){
     await client.connect();
@@ -107,8 +134,113 @@ async function updatePassword(email,newPassword){
       await client.close();
       return true;
     }
+}
+
+// async function resetFiles(){
+//   await client.connect();
+//   var db = client.db(dbName);
+//   const collection = db.collection('User');
+//   await collection.updateMany({},{$set: {files:[]}})
+// }
+//  resetFiles()
+async function uploadFiles(file,user_email,uploadDate){
+    
+      var user = await find(user_email);
+      try{
+          await client.connect();
+          
+        
+          const db  = client.db(dbName);
+          const uploadData = {file:file,date:uploadDate}
+          const filter = {_id:user[0]._id}
+          const update = {$push: {files:uploadData}};
+          await db.collection('User').updateOne(filter,update);
+          
+
+      }catch(err){
+        console.log(err);
+        return false;
+      }finally{
+        await client.close();
+      }
+      return true;
+
+}
+async function getAllFiles(email){
+    var user = await find(email);
+    var files = user[0].files
+    if(files.length < 1){
+      return [];
+    }else{
+
+    }
     
 }
 
+async function deleteFile(idx,email){
+   var user = await find(email); 
+  
+  try{
+   await client.connect();
+  
+    const filter = {_id:user[0]._id};
+    const db = client.db(dbName);
+  
+    const delete_file = {$unset: {[`files.${idx}`]:1} };
+   
 
-module.exports = {connect,insert,find,findUser,updatePassword};
+    const result =await db.collection('User').updateOne(filter,delete_file);
+    await db.collection('User').updateOne(filter,{$pull:{"files":null}})
+   
+
+  }catch(err){
+    console.error(err)
+    return false;
+  }finally{
+    await client.close()
+  }
+  return true;
+
+
+}
+async function renameFile(idx,email,fileName){
+  try{
+     var user = await find(email);
+  var file = user[0].files[idx].file;
+  var filter = {_id:user[0]._id};
+  var date = user[0].files[idx].date
+  console.log(file)
+  file.originalname = fileName
+  console.log(file)
+  await client.connect()
+  var updateName = {file:file,date:date}
+  const db = client.db(dbName);
+  const updateFile = {$set : {[`files.${idx}`]:updateName}}
+ await db.collection('User').updateOne(filter,updateFile)
+  }catch(err){
+      return false
+  }finally{
+   await client.close();
+  }
+ return true;
+
+
+
+
+}
+
+async function getSingleFile(idx,email){
+  var user = await find(email);
+  console.log(user)
+  console.log(user)
+ var file = user[0].files[idx].file;
+ console.log(file)
+
+ return file;
+
+}
+//getAllFiles("creeksidewill@gmail.com")
+//getSingleFile(0,'creeksidewill@gmail.com')
+//renameFile(0,'creeksidewill@gmail.com','newName.docx')
+
+module.exports = {getDownloadFiles,connect,insert,find,findUser,updatePassword,uploadFiles,deleteFile,renameFile,getSingleFile};
